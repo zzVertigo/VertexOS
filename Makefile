@@ -1,0 +1,58 @@
+OBJ_DIR = .objs
+SRC_DIR = src
+
+ISO_NAME = vertex.iso
+
+RESOURCES = vertex-resources
+TOOLCHAIN = vertex-toolchain
+BUILD = vertex-build
+
+AS = nasm
+AFLAGS = -f elf
+
+LD = $(TOOLCHAIN)/bin/i686-elf-ld
+CC = $(TOOLCHAIN)/bin/i686-elf-gcc
+
+CFLAGS = -g -ffreestanding -std=gnu99 -Wall -Wextra -I./src/include
+LDFLAGS = -ffreestanding -nostdlib -lgcc -T $(RESOURCES)/linker.ld
+
+ISO_MAKER = $(TOOLCHAIN)/bin/grub-mkrescue
+EMULATOR = "/mnt/c/Program Files/qemu/qemu-system-i386.exe"
+
+findfiles = $(foreach ext, c s, $(wildcard $(1)/*.$(ext)))
+getobjs = $(foreach ext, c s, $(filter %.o,$(patsubst %.$(ext),%.o,$(1))))
+
+PATHS = $(shell find $(SRC_DIR) -type d -print)
+PATHS := $(foreach f,$(PATHS),$(if $(filter extern,$(subst /, ,$f)),,$f))
+
+VERTEX_FILES = $(foreach path, $(PATHS), $(call findfiles, $(path)))
+
+OBJECTS = $(patsubst $(SRC_DIR)/%, $(OBJ_DIR)/%, $(call getobjs, $(VERTEX_FILES)))
+OBJECTS := $(foreach f,$(OBJECTS),$(if $(filter extern,$(subst /, ,$f)),,$f))
+
+all: $(BUILD)/boot/vertex.bin $(ISO_NAME)
+
+$(OBJ_DIR)/%.o: $(SRC_DIR)/%.s
+	@mkdir -p `dirname $@`
+	$(AS) $(AFLAGS) -o $@ $<
+
+$(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
+	@mkdir -p `dirname $@`
+	$(CC) $(CFLAGS) -o $@ -c $<
+
+$(BUILD)/boot/vertex.bin: $(OBJECTS)
+	@mkdir -p `dirname $@`
+	$(CC) $(LDFLAGS) -o $@ $^
+
+$(BUILD)/boot/grub/grub.cfg: $(RESOURCES)/grub.cfg
+	@mkdir -p `dirname $@`
+	cp $^ $@
+
+$(ISO_NAME): $(BUILD)/boot/vertex.bin $(BUILD)/boot/grub/grub.cfg
+	$(ISO_MAKER) -d $(TOOLCHAIN)/lib/grub/i386-pc -o $@ $(BUILD)
+
+run: $(ISO_NAME)
+	$(EMULATOR) -cdrom $^
+
+clean:
+	@rm -rf $(OBJECTS) $(ISO_NAME) $(BUILD)/boot/vertex.bin

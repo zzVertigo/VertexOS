@@ -1,0 +1,12 @@
+{
+    "files.associations": {
+        "system.h": "c",
+        "gdt.h": "c",
+        "multiboot.h": "c",
+        "xlocale": "cpp",
+        "ctype.h": "c",
+        "__printf__.h": "c",
+        "xstring": "c",
+        "xiosbase": "c"
+    }
+}
