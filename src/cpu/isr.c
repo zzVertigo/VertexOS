@@ -1,67 +1,67 @@
-#include <cpu/idt.h>
 #include <cpu/isr.h>
 
+isr_t interrupt_handlers[256];
+
 static const char *exception_messages[32] = {
-        "Division by zero",
-		"Debug",
-		"Non-maskable interrupt",
-		"Breakpoint",
-		"Detected overflow",
-		"Out-of-bounds",
-		"Invalid opcode",
-		"No coprocessor",
-		"Double fault",
-		"Coprocessor segment overrun",
-		"Bad TSS",
-		"Segment not present",
-		"Stack fault",
-		"General protection fault",
-		"Page fault",
-		"Unknown interrupt",
-		"Coprocessor fault",
-		"Alignment check",
-		"Machine check",
-		"Reserved",
-		"Reserved",
-		"Reserved",
-		"Reserved",
-		"Reserved",
-		"Reserved",
-		"Reserved",
-		"Reserved",
-		"Reserved",
-		"Reserved",
-		"Reserved",
-		"Reserved",
-		"Reserved"
+	"Division by zero",
+	"Debug",
+	"Non-maskable interrupt",
+	"Breakpoint",
+	"Detected overflow",
+	"Out-of-bounds",
+	"Invalid opcode",
+	"No coprocessor",
+	"Double fault",
+	"Coprocessor segment overrun",
+	"Bad TSS",
+	"Segment not present",
+	"Stack fault",
+	"General protection fault",
+	"Page fault",
+	"Unknown interrupt",
+	"Coprocessor fault",
+	"Alignment check",
+	"Machine check",
+	"Reserved",
+	"Reserved",
+	"Reserved",
+	"Reserved",
+	"Reserved",
+	"Reserved",
+	"Reserved",
+	"Reserved",
+	"Reserved",
+	"Reserved",
+	"Reserved",
+	"Reserved",
+	"Reserved"
 };
 
-extern u32 isr_vector[];
-static isr_handler_t isr_handlers[32] = {0};
-
-void isr_setup() {
-    for (u32 i = 0; i < 32; i++) {
-        idt_entry(i, isr_vector[i], 0x08, INTGATE);
-    }
-
-    // todo 128 syscall handler
+void register_interrupt_handler(u8 n, isr_t handler) {
+    interrupt_handlers[n] = handler;
 }
 
-isr_handler_t isr_register(int index, isr_handler_t handler) {
-    if (index < 32) {
-        isr_handlers[index] = handler;
-        return handler;
-    }
+void isr_handler(registers_t regs) {
+    u8 int_no = regs.int_no & 0xFF;
 
-    return NULL;
-}
-
-void isr_handler(processor_context_t context) {
-    if (isr_handlers[context.int_no] != NULL) {
-        isr_handlers[context.int_no](&context);
+    if (interrupt_handlers[int_no] != NULL) {
+        isr_t handler = interrupt_handlers[int_no];
+        handler(&regs);
     } else {
-        // handle interrupt 128
-    }
+        kprintf("Unhandled exception: [%d] -> %s", regs.int_no, exception_messages[regs.int_no]);
 
-    out8(0x20, 0x20);
+        for(;;);
+    }
+}
+
+void irq_handler(registers_t regs) {
+    if (regs.int_no >= 40)
+        outportb(0xA0, 0x20);
+
+    outportb(0x20, 0x20);
+
+    if (interrupt_handlers[regs.int_no] != NULL) {
+        isr_t handler = interrupt_handlers[regs.int_no];
+        handler(&regs);
+    }
 }

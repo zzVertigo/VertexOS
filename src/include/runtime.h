@@ -3,6 +3,9 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include <system/devices/display.h>
+#include <system/devices/processor.h>
+
 #define NULL ((void *)0)
 
 typedef void s0;
@@ -23,6 +26,13 @@ typedef unsigned char uchar;
 typedef unsigned short wchar;
 typedef unsigned short ushort;
 typedef unsigned int uint;
+
+extern u32 boot_time;
+extern u32 timer_ticks;
+extern u32 timer_subticks;
+extern u32 timer_drift;
+
+#define panic(...) {kprintf("*** KERNEL PANIC ***\nSource File: %s", __FILE__); kprintf("\nSource Line: %d\n", __LINE__); kprintf("Source Function: %s", __func__); for(;;);}
 
 #define __packed __attribute__((packed))
 

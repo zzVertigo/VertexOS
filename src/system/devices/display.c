@@ -1,7 +1,7 @@
-#include <system/display.h>
-#include <system/cstring.h>
+#include <system/devices/display.h>
+#include <system/chelpers.h>
 
-#include <display/textmode.h>
+#include <system/display/textmode.h>
 
 char tbuf[32];
 char bchars[] = {'0','1','2','3','4','5','6','7','8','9','A','B','C','D','E','F'};
@@ -139,7 +139,7 @@ void kprintf(const char* string, ...) {
 
                 case 'd': {
                     int s = va_arg(ap, int);
-                    char str[32] = {0};
+                    char str[64] = {0};
                     itoa_s(s, 10, str);
                     textmode_puts(str);
                     i++;
@@ -148,7 +148,7 @@ void kprintf(const char* string, ...) {
 
                 case 'x': {
                     int s = va_arg(ap, int);
-                    char str[32] = {0};
+                    char str[64] = {0};
                     itoa(s, 16, str);
                     textmode_puts(str);
                     i++;

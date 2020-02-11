@@ -1,7 +1,8 @@
-#include <display/textmode.h>
+#include <system/display/textmode.h>
 
-#include <system/cstring.h>
-#include <system/processor.h>
+#include <system/chelpers.h>
+
+#include <system/devices/processor.h>
 
 static display_t display = {0};
 
@@ -18,20 +19,20 @@ static void scroll() {
 }
 
 u32 get_cursor_offset() {
-	out8(SCREEN_CTRL, 14);
-	int offset = in8(SCREEN_DATA) << 8;
-	out8(SCREEN_CTRL, 15);
-	offset += in8(SCREEN_DATA);
+	outportb(SCREEN_CTRL, 14);
+	int offset = inportb(SCREEN_DATA) << 8;
+	outportb(SCREEN_CTRL, 15);
+	offset += inportb(SCREEN_DATA);
 	return offset * 2;
 }
 
 void set_cursor_offset(int offset) {
 	offset /= 2;
 
-	out8(SCREEN_CTRL, 14);
-	out8(SCREEN_DATA, (unsigned char)(offset >> 8));
-	out8(SCREEN_CTRL, 15);
-	out8(SCREEN_DATA, (unsigned char)(offset & 0xFF));
+	outportb(SCREEN_CTRL, 14);
+	outportb(SCREEN_DATA, (unsigned char)(offset >> 8));
+	outportb(SCREEN_CTRL, 15);
+	outportb(SCREEN_DATA, (unsigned char)(offset & 0xFF));
 }
 
 u32 get_current_offset(int col, int row) {
@@ -66,7 +67,7 @@ void textmode_setup() {
 }
 
 void textmode_puts(const char* s) {
-    for (size_t i = 0; i < strlen(s); i++) {
+    for (int i = 0; i < strlen(s); i++) {
         textmode_putc(s[i]);
     }
 }
@@ -74,10 +75,10 @@ void textmode_puts(const char* s) {
 void update_cursor() {
     u16 pos = display.y * TEXTMODE_WIDTH + display.x;
 
-    out8(SCREEN_CTRL, 0x0F);
-	out8(SCREEN_DATA, (u8)pos & 0xFF);
-	out8(SCREEN_CTRL, 0x0E);
-	out8(SCREEN_DATA, (u8)(pos >> 8) & 0xFF);
+    outportb(SCREEN_CTRL, 14);
+	outportb(SCREEN_DATA, pos >> 8);
+	outportb(SCREEN_CTRL, 15);
+	outportb(SCREEN_DATA, pos);
 }
 
 void textmode_putc(unsigned char c) {
@@ -85,24 +86,22 @@ void textmode_putc(unsigned char c) {
         return;
 
     if (display.x >= TEXTMODE_WIDTH || c == '\n') {
-        display.x = 0;
+        display.x = -1;
         display.y++;
+    } else if (c == 0x08 && display.x) {
+        display.x--;
+    } else if (c == 0x09) {
+        display.x = (display.x + 8) & ~(7);
+    } else if (c == '\r') {
+        display.x = 0;
+    } else if (c >= ' ') {
+        const u32 index = display.y * TEXTMODE_WIDTH + display.x;
+
+        display.buffer[index] = (u16*)vga_entry(c, display.color);
     }
 
-    // if (display.y >= TEXTMODE_HEIGHT) {
-    //     scroll();
-
-    //     display.y--;
-    // }
-
-    if (c == '\n')
-        return;
-
-    const u32 index = display.y * TEXTMODE_WIDTH + display.x;
-
-    display.buffer[index] = (u16*)vga_entry(c, display.color);
+    display.x++;
+    //display.y++;
 
     update_cursor();
-
-    display.x++;
 }

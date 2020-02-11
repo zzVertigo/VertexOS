@@ -1,4 +1,4 @@
-#include <system/cstring.h>
+#include <system/chelpers.h>
 
 void *memchr(const void *str, int c, size_t n) {
     unsigned char *s = (unsigned char *)str;
@@ -80,4 +80,29 @@ size_t strlen(const char *str) {
         length++;
 
     return length;
+}
+
+char *strcpy(char *dest, const char *src) {
+    do {
+        *dest++ = *src++;
+    } while (*src != 0);
+}
+
+int strcmp(char *str1, char *str2) {
+    int i = 0;
+    int failed = 0;
+
+    while (str1[i] != '\0' && str2[i] != '\0') {
+        if (str1[i] != str2[i]) {
+            failed = 1;
+            break;
+        }
+
+        i++;
+    }
+
+    if ((str1[i] == '\0' && str2[i] != '\0') || (str1[i] != '\0' && str2[i] == '\0'))
+        failed = 1;
+
+    return failed;
 }
