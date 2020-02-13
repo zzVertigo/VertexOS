@@ -22,8 +22,8 @@ enum vga_color {
 };
 
 #define VGA_ADDR 0xB8000
-#define TEXTMODE_WIDTH 80 // rows
-#define TEXTMODE_HEIGHT 25 // cols
+#define MAX_COLS 80
+#define MAX_ROWS 25
 
 #define SCREEN_DATA 0x3D5
 #define SCREEN_CTRL 0x3D4
@@ -35,8 +35,5 @@ typedef struct {
 } display_t;
 
 void textmode_setup();
-void textmode_putc(unsigned char c);
-void textmode_puts(const char* s);
-static void scroll();
-inline u16 create_entry(char c, u8 color);
-inline u8 make_color(u8 fg, u8 bg);
+void puts(char* message);
+u32 putc(char c, int x, int y);

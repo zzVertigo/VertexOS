@@ -2,4 +2,4 @@
 
 #include <runtime.h>
 
-void kprintf(const char* string, ...);
+void printf(const char* format, ...);

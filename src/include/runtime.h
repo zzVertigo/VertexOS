@@ -32,7 +32,7 @@ extern u32 timer_ticks;
 extern u32 timer_subticks;
 extern u32 timer_drift;
 
-#define panic(...) {kprintf("*** KERNEL PANIC ***\nSource File: %s", __FILE__); kprintf("\nSource Line: %d\n", __LINE__); kprintf("Source Function: %s", __func__); for(;;);}
+#define panic(str, ...) {printf("*** KERNEL PANIC ***\n\nReason: %s\nSource File: %s\nSource Line: %d\nSource Function %s", str, __FILE__, __LINE__, __func__); for(;;);}
 
 #define __packed __attribute__((packed))
 

@@ -48,8 +48,8 @@ void isr_handler(registers_t regs) {
         isr_t handler = interrupt_handlers[int_no];
         handler(&regs);
     } else {
-        kprintf("Unhandled exception: [%d] -> %s", regs.int_no, exception_messages[regs.int_no]);
-
+		printf("Unhandled exception: [%d] -> %s", regs.int_no, exception_messages[regs.int_no]);
+		
         for(;;);
     }
 }

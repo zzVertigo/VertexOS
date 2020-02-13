@@ -16,8 +16,9 @@ CC = $(TOOLCHAIN)/bin/i686-elf-gcc
 CFLAGS = -g -ffreestanding -std=gnu99 -Wall -Wextra -I./src/include
 LDFLAGS = -ffreestanding -nostdlib -lgcc -T $(RESOURCES)/linker.ld
 
-ISO_MAKER = $(TOOLCHAIN)/bin/grub-mkrescue
-EMULATOR = "/mnt/c/Program Files/qemu/qemu-system-i386.exe"
+ISO_MAKER_WINDOWS = $(TOOLCHAIN)/bin/grub-mkrescue
+ISO_MAKER_MACOS = i386-elf-grub-mkrescue
+EMULATOR = qemu-system-i386
 
 findfiles = $(foreach ext, c s, $(wildcard $(1)/*.$(ext)))
 getobjs = $(foreach ext, c s, $(filter %.o,$(patsubst %.$(ext),%.o,$(1))))
@@ -48,8 +49,11 @@ $(BUILD)/boot/grub/grub.cfg: $(RESOURCES)/grub.cfg
 	@mkdir -p `dirname $@`
 	cp $^ $@
 
-$(ISO_NAME): $(BUILD)/boot/vertex.bin $(BUILD)/boot/grub/grub.cfg
-	$(ISO_MAKER) -d $(TOOLCHAIN)/lib/grub/i386-pc -o $@ $(BUILD)
+macos: $(BUILD)/boot/vertex.bin $(BUILD)/boot/grub/grub.cfg
+	$(ISO_MAKER_MACOS) -d /usr/local/lib/grub/i386-pc -o $(ISO_NAME) $(BUILD)
+
+linux: $(BUILD)/boot/vertex.bin $(BUILD)/boot/grub/grub.cfg
+	$(ISO_MAKER_WINDOWS) -d $(TOOLCHAIN)/lib/grub/i386-pc -o $(ISO_NAME) $(BUILD)
 
 run: $(ISO_NAME)
 	$(EMULATOR) -cdrom $^

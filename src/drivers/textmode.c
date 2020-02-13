@@ -1,10 +1,19 @@
-#include <system/display/textmode.h>
+#include <drivers/textmode.h>
 
 #include <system/chelpers.h>
 
 #include <system/devices/processor.h>
 
 static display_t display = {0};
+
+int get_offset(int col, int row);
+int get_offset_row(int offset);
+int get_offset_col(int offset);
+int get_cursor_offset();
+
+void set_cursor_offset(int offset);
+
+void puts_at(char* message, int x, int y);
 
 static u8 vga_entry_color(enum vga_color fg, enum vga_color bg) {
 	return fg | bg << 4;
@@ -14,94 +23,116 @@ static u16 vga_entry(unsigned char uc, u8 color) {
 	return (u16) uc | (u16) color << 8;
 }
 
-static void scroll() {
-    memmove(VGA_ADDR, VGA_ADDR + (80 * 2), (80 * 20 * 2));
-}
-
-u32 get_cursor_offset() {
-	outportb(SCREEN_CTRL, 14);
-	int offset = inportb(SCREEN_DATA) << 8;
-	outportb(SCREEN_CTRL, 15);
-	offset += inportb(SCREEN_DATA);
-	return offset * 2;
-}
-
-void set_cursor_offset(int offset) {
-	offset /= 2;
-
-	outportb(SCREEN_CTRL, 14);
-	outportb(SCREEN_DATA, (unsigned char)(offset >> 8));
-	outportb(SCREEN_CTRL, 15);
-	outportb(SCREEN_DATA, (unsigned char)(offset & 0xFF));
-}
-
-u32 get_current_offset(int col, int row) {
-	return (row * TEXTMODE_HEIGHT + col);
-}
-
-u32 get_offset_row(int offset) {
-	return offset / (2 * TEXTMODE_HEIGHT);
-}
-
-u32 get_offset_col(int offset) {
-	return (offset - (get_offset_row(offset) * 2 * TEXTMODE_HEIGHT)) / 2;
-}
-
 void textmode_setup() {
     display.color = vga_entry_color(VGA_COLOR_WHITE, VGA_COLOR_BLACK);
 
-    display.buffer = (unsigned char*)VGA_ADDR;
+    display.buffer = (u8*)VGA_ADDR;
 
-    set_cursor_offset(0);
-
-    for (u32 y = 0; y < TEXTMODE_HEIGHT; y++) {
-        for (u32 x = 0; x < TEXTMODE_WIDTH; x++) {
-            const u32 index = y * TEXTMODE_WIDTH + x;
-
-            display.buffer[index] = vga_entry(' ', display.color);
-        }
+    for (int i = 0; i < (MAX_COLS * MAX_ROWS); i++) {
+        display.buffer[i] = vga_entry(' ', display.color);
     }
 
     display.x = 0;
     display.y = 0;
+
+    set_cursor_offset(get_offset(display.x, display.y));
 }
 
-void textmode_puts(const char* s) {
-    for (int i = 0; i < strlen(s); i++) {
-        textmode_putc(s[i]);
+void puts(char* message) {
+    puts_at(message, -1, -1);
+}
+
+void puts_at(char* message, int col, int row) {
+    int offset;
+
+    if (col >= 0 && row >= 0) {
+        offset = get_offset(col, row);
+    } else {
+        offset = get_cursor_offset();
+        row = get_offset_row(offset);
+        col = get_offset_col(offset);
+    }
+
+    int i = 0;
+
+    while (message[i] != 0) {
+        offset = putc(message[i++], col, row);
+
+        row = get_offset_row(offset);
+        col = get_offset_col(offset);
     }
 }
 
-void update_cursor() {
-    u16 pos = display.y * TEXTMODE_WIDTH + display.x;
+u32 putc(char c, int col, int row) {
+    int offset;
+
+    if (col >= 0 && row >= 0)
+        offset = get_offset(col, row);
+    else
+        offset = get_cursor_offset();
+
+    if (c == '\n') {
+        row = get_offset_row(offset);
+        offset = get_offset(0, row + 1);
+    } else if (c == 0x08) {
+        display.buffer[offset] = vga_entry(' ', display.color);
+    } else {
+        display.buffer[offset / 2] = vga_entry((unsigned char)c, display.color);
+
+        offset += 2;
+    }
+
+    if (offset >= MAX_ROWS * MAX_COLS * 2) {
+        int i;
+
+        for (i = 1; i < MAX_ROWS; i++) {
+            memcpy((u8*)(get_offset(0, i) + VGA_ADDR), (u8*)(get_offset(0, i-1) + VGA_ADDR), MAX_COLS * 2);
+
+            char *lastline = (char*)(get_offset(0, MAX_ROWS - 1) + (u8*)VGA_ADDR);
+
+            for (i = 0; i < MAX_COLS * 2; i++) {
+                lastline[i] = 0;
+            }
+
+            offset -= 2 * MAX_COLS;
+        }
+    }
+
+    set_cursor_offset(offset);
+
+    return offset;
+}
+
+void set_cursor_offset(int offset) {
+    offset /= 2;
 
     outportb(SCREEN_CTRL, 14);
-	outportb(SCREEN_DATA, pos >> 8);
-	outportb(SCREEN_CTRL, 15);
-	outportb(SCREEN_DATA, pos);
+    outportb(SCREEN_DATA, (u8)(offset >> 8));
+    outportb(SCREEN_CTRL, 15);
+    outportb(SCREEN_DATA, (u8)(offset & 0xFF));
 }
 
-void textmode_putc(unsigned char c) {
-    if (!c)
-        return;
+int get_cursor_offset() {
+    outportb(SCREEN_CTRL, 14);
+    int offset = inportb(SCREEN_DATA) << 8;
+    outportb(SCREEN_CTRL, 15);
 
-    if (display.x >= TEXTMODE_WIDTH || c == '\n') {
-        display.x = -1;
-        display.y++;
-    } else if (c == 0x08 && display.x) {
-        display.x--;
-    } else if (c == 0x09) {
-        display.x = (display.x + 8) & ~(7);
-    } else if (c == '\r') {
-        display.x = 0;
-    } else if (c >= ' ') {
-        const u32 index = display.y * TEXTMODE_WIDTH + display.x;
+    offset += inportb(SCREEN_DATA);
 
-        display.buffer[index] = (u16*)vga_entry(c, display.color);
-    }
+    return offset * 2;
+}
 
-    display.x++;
-    //display.y++;
+// not it
+int get_offset(int col, int row) {
+    return 2 * (row * MAX_COLS + col);
+}
 
-    update_cursor();
+// not it
+int get_offset_row(int offset) {
+    return offset / (2 * MAX_COLS);
+}
+
+// not it
+int get_offset_col(int offset) {
+    return (offset - (get_offset_row(offset) * 2 * MAX_COLS)) / 2;
 }

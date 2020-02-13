@@ -50,3 +50,8 @@ modules.order
 Module.symvers
 Mkfile.old
 dkms.conf
+
+# don't wanna be uploading 300+ mb to GitHub LOL
+vertex-toolchain
+.objs
+.vscode

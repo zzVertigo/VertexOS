@@ -70,7 +70,7 @@ void alloc_frame(page_t *page, int is_kernel, int is_writeable)
         u32 idx = first_frame();
         if (idx == (u32)-1)
         {
-            panic("No free frames");
+            //panic("No free frames");
         }
         set_frame(idx*0x1000);
         page->present = 1;

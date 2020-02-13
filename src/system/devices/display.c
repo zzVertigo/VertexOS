@@ -1,7 +1,7 @@
 #include <system/devices/display.h>
 #include <system/chelpers.h>
 
-#include <system/display/textmode.h>
+#include <drivers/textmode.h>
 
 char tbuf[32];
 char bchars[] = {'0','1','2','3','4','5','6','7','8','9','A','B','C','D','E','F'};
@@ -22,46 +22,6 @@ static const double rounders[MAX_PRECISION + 1] =
 	0.0000000005,		// 9
 	0.00000000005		// 10
 };
-
-void itoa(unsigned i, unsigned base, char* buf) {
-    int pos = 0;
-    int opos = 0;
-    int top = 0;
-
-    if (i == 0 || base > 16) {
-        buf[0] = '0';
-        buf[1] = '\0';
-
-        return;
-    }
-
-    while (i != 0) {
-        tbuf[pos] = bchars[i % base];
-        pos++;
-
-        i /= base;
-    }
-
-    top = pos--;
-
-    for (opos = 0; opos < top; pos--, opos++) {
-        buf[opos] = tbuf[pos];
-    }
-
-    buf[opos] = 0;
-}
-
-void itoa_s(int i, unsigned base, char* buf) {
-    if (base > 16)
-        return;
-
-    if (i < 0) {
-        *buf++ = '-';
-        i *= -1;
-    }
-
-    itoa(i, base, buf);
-}
 
 int pow(int base, int exponent) {
     int result = 1;
@@ -119,66 +79,92 @@ void ftoa(double n, char *res, int afterpoint) {
     intToStr((int)fpart, res + i + 1, afterpoint);
 }
 
-void kprintf(const char* string, ...) {
-    if (!string)
+char *convert(unsigned int num, int base) 
+{ 
+	static char Representation[]= "0123456789ABCDEF";
+	static char buffer[50]; 
+	char *ptr; 
+	
+	ptr = &buffer[49]; 
+	*ptr = '\0'; 
+	
+	do 
+	{ 
+		*--ptr = Representation[num%base]; 
+		num /= base; 
+	}while(num != 0); 
+	
+	return(ptr); 
+}
+
+void printf(const char* format, ...) {
+    if (!format)
         return;
 
-    va_list ap;
+    unsigned int a;
+    char *traverse;
 
-    va_start(ap, string);
+    va_list arg;
 
-    for (size_t i = 0; i < strlen(string); i++) {
-        if (string[i] == '%') {
-            switch (string[i + 1]) {
-                case 's': {
-                    string = va_arg(ap, char*);
-                    textmode_puts(string);
-                    i++;
+    va_start(arg, format);
+
+    for (int i = 0; i < strlen(format); i++) {
+        if (format[i] != '%') {
+            putc(format[i], -1, -1);
+            continue;
+        } else {
+            switch (format[i += 1]) {
+                case 'c': {
+                    int c = va_arg(arg, int);
+
+                    putc(c, -1, -1);
+
                     continue;
                 }
 
                 case 'd': {
-                    int s = va_arg(ap, int);
-                    char str[64] = {0};
-                    itoa_s(s, 10, str);
-                    textmode_puts(str);
-                    i++;
+                    int d = va_arg(arg, int);
+
+                    if (d < 0) {
+                        d = -d;
+                        puts("-");
+                    }
+
+                    puts(convert(d, 10));
+
+                    continue;
+                }
+
+                case 'o': {
+                    unsigned int o = va_arg(arg, unsigned int);
+
+                    puts(convert(o, 8));
+
+                    continue;
+                }
+
+                case 's': {
+                    char *s = va_arg(arg, char*);
+
+                    puts(s);
+
                     continue;
                 }
 
                 case 'x': {
-                    int s = va_arg(ap, int);
-                    char str[64] = {0};
-                    itoa(s, 16, str);
-                    textmode_puts(str);
-                    i++;
-                    continue;
-                }
+                    unsigned int x = va_arg(arg, unsigned int);
 
-                case 'c': {
-                    char s = (char)(va_arg(ap, int) & ~0xFFFFFF00);
-                    textmode_putc(s);
-                    i++;
-                    continue;
-                }
+                    puts(convert(x, 16));
 
-                case 'f': {
-                    double s = va_arg(ap, double);
-                    char str[32] = {0};
-                    ftoa(s, str, 6);
-                    textmode_puts(str);
-                    i++;
                     continue;
                 }
 
                 default:
-                    break;
+                    continue;
             }
-        } else {
-            textmode_putc(string[i]);
         }
     }
 
-    va_end(ap);
+    va_end(arg);
 }
 

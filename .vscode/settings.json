@@ -7,6 +7,7 @@
         "ctype.h": "c",
         "__printf__.h": "c",
         "xstring": "c",
-        "xiosbase": "c"
+        "xiosbase": "c",
+        "processor.h": "c"
     }
 }
