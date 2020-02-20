@@ -41,8 +41,9 @@ _kstart:
 
         mov esp, __stack_top
 
-        push eax
-        push ebx
+        push esp ; stack pointer
+        push eax ; magic
+        push ebx ; multiboot
 
         extern kmain
         call kmain

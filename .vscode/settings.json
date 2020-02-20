@@ -8,6 +8,7 @@
         "__printf__.h": "c",
         "xstring": "c",
         "xiosbase": "c",
-        "processor.h": "c"
+        "processor.h": "c",
+        "paging.h": "c"
     }
 }

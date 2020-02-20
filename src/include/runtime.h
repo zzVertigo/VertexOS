@@ -32,9 +32,24 @@ extern u32 timer_ticks;
 extern u32 timer_subticks;
 extern u32 timer_drift;
 
-#define panic(str, ...) {printf("*** KERNEL PANIC ***\n\nReason: %s\nSource File: %s\nSource Line: %d\nSource Function %s", str, __FILE__, __LINE__, __func__); for(;;);}
+void __panic(const char *file, u32 line, const char *func, const char *reason);
+void __assert(const char *file, u32 line, const char* func, const char *reason);
 
-#define __packed __attribute__((packed))
+void reboot();
+
+#define NAME "VertexOS"
+
+#define MAJOR 0
+#define MINOR 0
+#define BUILD 1
+
+#define COPYRIGHT_OWNER "zzVertigo"
+#define COPYRIGHT_YEAR 2020
+
+#define panic(str, ...) __panic(__FILE__, __LINE__, __func__, str);
+#define assert(cond) ((cond) ? (void)0 : __assert(__FILE__, __LINE__, __func__, #cond))
+
+#define __noreturn __attribute__((noreturn))
 
 #define __aligned(__align) __attribute__((aligned(__align)))
 

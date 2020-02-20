@@ -34,7 +34,7 @@ static void idt_set_gate(u8 num, u32 base, u16 sel, u8 flags)
 
     idt_entries[num].sel     = sel;
     idt_entries[num].always0 = 0;
-    idt_entries[num].flags   = flags  | 0x60;
+    idt_entries[num].flags   = flags | 0x60;
 }
 
 static void write_tss(s32 num, u16 ss0, u32 esp0) {
@@ -68,22 +68,34 @@ static void init_gdt() {
     tss_flush();
 }
 
+static void pic_remap(u8 offset1, u8 offset2) {
+    u8 a1, a2;
+
+    a1 = inportb(PIC1_DATA);
+    a2 = inportb(PIC2_DATA);
+
+    outportb(PIC1_COMMAND, ICW1_INIT+ICW1_ICW4); // Start init sequence
+    outportb(PIC2_COMMAND, ICW1_INIT+ICW1_ICW4);
+
+    outportb(PIC1_DATA, offset1);
+    outportb(PIC2_DATA, offset2);
+
+    outportb(PIC1_DATA, 4); // Tell master PIC that there is a slave PIC at IRQ2
+    outportb(PIC1_DATA, 2); // Tell salve PIC it's cascade identity
+
+    outportb(PIC1_DATA, ICW4_8086);
+    outportb(PIC2_DATA, ICW4_8086);
+
+    // Restore saved masks
+    outportb(PIC1_DATA, a1);
+    outportb(PIC2_DATA, a2);
+}
+
 static void init_idt() {
     idt_ptr.limit = sizeof(idt_entry_t) * 256 - 1;
-    idt_ptr.base = (u32)&idt_entries;
+    idt_ptr.base = idt_entries;
 
     memset(&idt_entries, 0, sizeof(idt_entry_t) * 256);
-
-    outportb(0x20, 0x11);
-    outportb(0xA0, 0x11);
-    outportb(0x21, 0x20);
-    outportb(0xA1, 0x28);
-    outportb(0x21, 0x04);
-    outportb(0xA1, 0x02);
-    outportb(0x21, 0x01);
-    outportb(0xA1, 0x01);
-    outportb(0x21, 0x0);
-    outportb(0xA1, 0x0);
 
     idt_set_gate( 0, (u32)isr0 , 0x08, 0x8E);
     idt_set_gate( 1, (u32)isr1 , 0x08, 0x8E);
@@ -117,6 +129,9 @@ static void init_idt() {
     idt_set_gate(29, (u32)isr29, 0x08, 0x8E);
     idt_set_gate(30, (u32)isr30, 0x08, 0x8E);
     idt_set_gate(31, (u32)isr31, 0x08, 0x8E);
+
+    pic_remap(PIC1_START_INTERRUPT, PIC2_START_INTERRUPT);
+
     idt_set_gate(32, (u32)irq0, 0x08, 0x8E);
     idt_set_gate(33, (u32)irq1, 0x08, 0x8E);
     idt_set_gate(34, (u32)irq2, 0x08, 0x8E);
@@ -133,9 +148,9 @@ static void init_idt() {
     idt_set_gate(45, (u32)irq13, 0x08, 0x8E);
     idt_set_gate(46, (u32)irq14, 0x08, 0x8E);
     idt_set_gate(47, (u32)irq15, 0x08, 0x8E);
-    idt_set_gate(128, (u32)isr128, 0x08, 0x8E);
+    idt_set_gate(128, (u32)isr128, 0x08, 0x8E); // syscalls Xd
 
-    idt_flush((u32)&idt_ptr);
+    idt_flush(&idt_ptr);
 }
 
 void set_kernel_stack(u32 stack) {
@@ -145,6 +160,4 @@ void set_kernel_stack(u32 stack) {
 void descriptors_setup() {
     init_gdt();
     init_idt();
-
-    memset(&interrupt_handlers, 0, sizeof(isr_t) * 256);
 }

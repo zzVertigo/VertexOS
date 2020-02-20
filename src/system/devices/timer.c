@@ -2,7 +2,7 @@
 #include <system/devices/cmos.h>
 #include <system/devices/processor.h>
 #include <cpu/descriptors.h>
-#include <system/task.h>
+#include <system/thread.h>
 #include <cpu/isr.h>
 
 u32 timer_ticks = 0;
@@ -21,7 +21,7 @@ void timer_phase(int hz) {
     outportb(PIT_A, (divisor >> 8) & PIT_MASK);
 }
 
-void timer_handler(processor_context_t *regs) {
+void timer_handler(registers_t *regs) {
     if (++timer_subticks == SUBTICKS_PER_TICK || (behind && ++timer_subticks == SUBTICKS_PER_TICK)) {
         timer_ticks++;
         timer_subticks = 0;
@@ -36,14 +36,12 @@ void timer_handler(processor_context_t *regs) {
                 behind = 0;
         }       
     }
-
-    switch_task();
 }
 
 void timer_setup() {
     boot_time = read_cmos();
 
-    register_interrupt_handler(IRQ0, timer_handler);
+    register_interrupt_handler(IRQ0, &timer_handler);
 
     timer_phase(SUBTICKS_PER_TICK);
 }

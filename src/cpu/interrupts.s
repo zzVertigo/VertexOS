@@ -10,7 +10,7 @@
   isr%1:
     cli                         ; Disable interrupts firstly.
     push byte 0                 ; Push a dummy error code.
-    push  %1                    ; Push the interrupt number.
+    push byte %1                    ; Push the interrupt number.
     jmp isr_common_stub         ; Go to our common handler code.
 %endmacro
 
@@ -20,7 +20,7 @@
   global isr%1
   isr%1:
     cli                         ; Disable interrupts.
-    push %1                     ; Push the interrupt number
+    push byte %1                     ; Push the interrupt number
     jmp isr_common_stub
 %endmacro
 
@@ -85,12 +85,8 @@ IRQ  13,    45
 IRQ  14,    46
 IRQ  15,    47
 
-; In isr.c
 extern isr_handler
 
-; This is our common ISR stub. It saves the processor state, sets
-; up for kernel mode segments, calls the C-level fault handler,
-; and finally restores the stack frame.
 isr_common_stub:
     pusha                    ; Pushes edi,esi,ebp,esp,ebx,edx,ecx,eax
 

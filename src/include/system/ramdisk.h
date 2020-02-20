@@ -3,7 +3,8 @@
 #include <runtime.h>
 
 #include <system/filesystem.h>
-#include <system/heap.h>
+#include <system/kheap.h>
+#include <system/devices/display.h>
 #include <system/chelpers.h>
 
 typedef struct {

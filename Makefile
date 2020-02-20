@@ -12,6 +12,8 @@ AFLAGS = -f elf
 
 LD = $(TOOLCHAIN)/bin/i686-elf-ld
 CC = $(TOOLCHAIN)/bin/i686-elf-gcc
+GDB = gdb
+OBJCOPY = $(TOOLCHAIN)/bin/i686-elf-objcopy
 
 CFLAGS = -g -ffreestanding -std=gnu99 -Wall -Wextra -I./src/include
 LDFLAGS = -ffreestanding -nostdlib -lgcc -T $(RESOURCES)/linker.ld
@@ -51,12 +53,15 @@ $(BUILD)/boot/grub/grub.cfg: $(RESOURCES)/grub.cfg
 
 macos: $(BUILD)/boot/vertex.bin $(BUILD)/boot/grub/grub.cfg
 	$(ISO_MAKER_MACOS) -d /usr/local/lib/grub/i386-pc -o $(ISO_NAME) $(BUILD)
+	$(OBJCOPY) --only-keep-debug $(BUILD)/boot/vertex.bin vertex.debug
 
 linux: $(BUILD)/boot/vertex.bin $(BUILD)/boot/grub/grub.cfg
 	$(ISO_MAKER_WINDOWS) -d $(TOOLCHAIN)/lib/grub/i386-pc -o $(ISO_NAME) $(BUILD)
 
+
 run: $(ISO_NAME)
-	$(EMULATOR) -cdrom $^
+	$(EMULATOR) -m 512 -cdrom $^
+	#$(GDB) --command=gdb.txt vertex-build/boot/vertex.bin
 
 clean:
 	@rm -rf $(OBJECTS) $(ISO_NAME) $(BUILD)/boot/vertex.bin

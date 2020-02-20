@@ -21,7 +21,6 @@ enum vga_color {
 	VGA_COLOR_WHITE = 15,
 };
 
-#define VGA_ADDR 0xB8000
 #define MAX_COLS 80
 #define MAX_ROWS 25
 
@@ -35,5 +34,6 @@ typedef struct {
 } display_t;
 
 void textmode_setup();
+void clear_screen();
 void puts(char* message);
 u32 putc(char c, int x, int y);

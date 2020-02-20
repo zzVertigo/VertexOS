@@ -2,30 +2,30 @@ ENTRY(_kstart)
 
 SECTIONS
 {
-	. = 1M;
-	__start = .;
-
-	.text BLOCK(4K) : ALIGN(4K)
+	.text 0x100000 :
 	{
+		code = .; _code = .; __code = .;
+
 		*(.multiboot)
 		*(.text)
+
+		. = ALIGN(4096);
 	}
 
-	.rodata BLOCK(4K) : ALIGN(4K)
+	.data :
 	{
-		*(.rodata)
-	}
-
-	.data BLOCK(4K) : ALIGN(4K)
-	{
+		data = .; _data = .; __data = .;
 		*(.data)
+		*(.rodata)
+		. = ALIGN(4096);
 	}
 
-	.bss BLOCK(4K) : ALIGN(4K)
+	.bss :
 	{
-		*(COMMON)
+		bss = .; _bss = .; __bss = .;
 		*(.bss)
+		. = ALIGN(4096);
 	}
 
-	__end = .;
+	end = .; _end = .; __end = .;
 }

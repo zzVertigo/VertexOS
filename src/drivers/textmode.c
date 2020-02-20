@@ -16,7 +16,7 @@ void set_cursor_offset(int offset);
 void puts_at(char* message, int x, int y);
 
 static u8 vga_entry_color(enum vga_color fg, enum vga_color bg) {
-	return fg | bg << 4;
+	return (bg << 4) | (fg & 0x0F);
 }
  
 static u16 vga_entry(unsigned char uc, u8 color) {
@@ -26,13 +26,24 @@ static u16 vga_entry(unsigned char uc, u8 color) {
 void textmode_setup() {
     display.color = vga_entry_color(VGA_COLOR_WHITE, VGA_COLOR_BLACK);
 
-    display.buffer = (u8*)VGA_ADDR;
+    display.buffer = (u16*)0xB8000;
 
     for (int i = 0; i < (MAX_COLS * MAX_ROWS); i++) {
         display.buffer[i] = vga_entry(' ', display.color);
     }
 
     display.x = 0;
+    display.y = 0;
+
+    set_cursor_offset(get_offset(display.x, display.y));
+}
+
+void clear_screen() {
+    for (int i = 0; i < (MAX_COLS * MAX_ROWS); i++) {
+        display.buffer[i] = vga_entry(' ', display.color);
+    }  
+
+        display.x = 0;
     display.y = 0;
 
     set_cursor_offset(get_offset(display.x, display.y));
@@ -66,6 +77,8 @@ void puts_at(char* message, int col, int row) {
 u32 putc(char c, int col, int row) {
     int offset;
 
+    u16 *location;
+
     if (col >= 0 && row >= 0)
         offset = get_offset(col, row);
     else
@@ -75,9 +88,11 @@ u32 putc(char c, int col, int row) {
         row = get_offset_row(offset);
         offset = get_offset(0, row + 1);
     } else if (c == 0x08) {
-        display.buffer[offset] = vga_entry(' ', display.color);
+        display.buffer[offset / 2] = vga_entry(' ', display.color);
+
+        offset -= 2;
     } else {
-        display.buffer[offset / 2] = vga_entry((unsigned char)c, display.color);
+        display.buffer[offset / 2] = vga_entry(c, display.color);
 
         offset += 2;
     }
@@ -86,9 +101,9 @@ u32 putc(char c, int col, int row) {
         int i;
 
         for (i = 1; i < MAX_ROWS; i++) {
-            memcpy((u8*)(get_offset(0, i) + VGA_ADDR), (u8*)(get_offset(0, i-1) + VGA_ADDR), MAX_COLS * 2);
+            memcpy((u16*)(get_offset(0, i) + 0xB8000), (u16*)(get_offset(0, i-1) + 0xB8000), MAX_COLS * 2);
 
-            char *lastline = (char*)(get_offset(0, MAX_ROWS - 1) + (u8*)VGA_ADDR);
+            char *lastline = (char*)(get_offset(0, MAX_ROWS - 1) + (u16*)0xB8000);
 
             for (i = 0; i < MAX_COLS * 2; i++) {
                 lastline[i] = 0;
