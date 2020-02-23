@@ -88,21 +88,14 @@ char *strcpy(char *dest, const char *src) {
     } while (*src != 0);
 }
 
-int strcmp(char *str1, char *str2) {
-    int i = 0;
-    int failed = 0;
-
-    while (str1[i] != '\0' && str2[i] != '\0') {
-        if (str1[i] != str2[i]) {
-            failed = 1;
+int strcmp(const char *str1, const char *str2) {
+    while (*str1) {
+        if (*str1 != *str2)
             break;
-        }
 
-        i++;
+        *str1++;
+        *str2++;
     }
 
-    if ((str1[i] == '\0' && str2[i] != '\0') || (str1[i] != '\0' && str2[i] == '\0'))
-        failed = 1;
-
-    return failed;
+    return *(const unsigned char*)str1 - *(const unsigned char*)str2;
 }

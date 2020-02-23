@@ -6,6 +6,7 @@
 #include <system/ramdisk.h>
 #include <system/paging.h>
 #include <system/thread.h>
+#include <system/shell.h>
 
 #include <system/devices/timer.h>
 #include <system/devices/processor.h>
@@ -84,16 +85,12 @@ void kmain(multiboot_info_t *mboot, u32 magic, u32 initial_stack) {
         printf("[*] No ramdisk mounted... continuing!\n\n");
     }
 
-    // clear_screen();
+    clear_screen();
 
-    printf("%s [Version %d.%d.%d]\n", NAME, MAJOR, MINOR, BUILD);
-    printf("(c) %d %s. All rights reserved.\n\n", COPYRIGHT_YEAR, COPYRIGHT_OWNER);
-
-    printf("> ");
+    setup_shell();
 
     while (1) {
         char c = get_ascii_char();
-
         printf("%c", c);
     }
 }

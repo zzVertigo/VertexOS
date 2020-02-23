@@ -1,5 +1,6 @@
 #include <system/devices/keyboard.h>
 #include <cpu/isr.h>
+#include <drivers/textmode.h>
 
 static void keyboard_callback();
 
@@ -119,11 +120,6 @@ u8 kb_buff[128];
 u8 kb_buff_hd;
 u8 kb_buff_tl;
 
-void clear(u8 buf[]) {
-    for (u32 i = 0; i < 512; i++)
-        buf[i] = 0;
-}
-
 static void pull_input() {
     u8 next_hd = (kb_buff_hd + 1) % 128;
 
@@ -144,6 +140,8 @@ static void pull_input() {
             shift = shift & 0x01;
         } else if (pressedbyte == 0x1D) {
             ctrl = 0;
+        } else if (pressedbyte == 0x1C) { // enter
+            keyboard_enter();
         }
 
         keypresses[pressedbyte] = 0;
@@ -183,6 +181,8 @@ static void pull_input() {
     }
 
     u8 ascii = codes[byte];
+
+    keyboard_add_press(ascii);
 
     if (ascii != 0) {
         kb_buff[kb_buff_hd] = ascii;

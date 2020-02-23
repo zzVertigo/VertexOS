@@ -12,4 +12,4 @@ size_t strlen(const char *str);
 
 char *strcpy(char *dest, const char *src);
 
-int strcmp(char *str1, char *str2);
+int strcmp(const char *str1, const char *str2);

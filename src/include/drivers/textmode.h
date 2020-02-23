@@ -21,19 +21,28 @@ enum vga_color {
 	VGA_COLOR_WHITE = 15,
 };
 
-#define MAX_COLS 80
-#define MAX_ROWS 25
+#define MAX_COLS 80 // width
+#define MAX_ROWS 25 // height
 
 #define SCREEN_DATA 0x3D5
 #define SCREEN_CTRL 0x3D4
 
-typedef struct {
-    size_t x, y;
+#define WHITE_ON_BLACK 0x0F
+
+#define VGA_ADDR 0xB8000
+
+typedef struct display {
+    u8 cursor_x, cursor_y;
     u8 color;
     u16* buffer;
 } display_t;
 
 void textmode_setup();
 void clear_screen();
+void scroll_screen();
+void keyboard_enter();
+void keyboard_backspace();
+void clear_command_buffer();
+void keyboard_add_press(u8 c);
 void puts(char* message);
-u32 putc(char c, int x, int y);
+void putc(char c);

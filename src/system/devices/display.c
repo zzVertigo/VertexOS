@@ -110,14 +110,14 @@ void printf(const char* format, ...) {
 
     for (int i = 0; i < strlen(format); i++) {
         if (format[i] != '%') {
-            putc(format[i], -1, -1);
+            putc(format[i]);
             continue;
         } else {
             switch (format[i += 1]) {
                 case 'c': {
                     int c = va_arg(arg, int);
 
-                    putc(c, -1, -1);
+                    putc(c);
 
                     continue;
                 }
