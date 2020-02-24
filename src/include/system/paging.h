@@ -65,5 +65,6 @@ void free_frame(page_t *page);
 void alloc_frame(page_t *page, s32 is_super, s32 is_write);
 // Page faults handler(ISR recorder)
 void page_fault(registers_t *regs);
+void mark_system_memory(u32 address);
 
 page_directory_t *clone_directory(page_directory_t *src);

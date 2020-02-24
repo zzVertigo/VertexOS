@@ -3,8 +3,9 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include <system/devices/display.h>
-#include <system/devices/processor.h>
+#include <system/drivers/display.h>
+#include <system/drivers/processor.h>
+#include <system/drivers/textmode.h>
 
 #define NULL ((void *)0)
 

@@ -1,5 +1,4 @@
 #include <runtime.h>
-#include <drivers/textmode.h>
 
 void __panic(const char *file, u32 line, const char *func, const char *reason) {
     clear_screen();

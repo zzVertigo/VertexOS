@@ -60,7 +60,7 @@ linux: $(BUILD)/boot/vertex.bin $(BUILD)/boot/grub/grub.cfg
 
 
 run: $(ISO_NAME)
-	$(EMULATOR) -m 512 -cdrom $^
+	$(EMULATOR) -serial file:output.txt -m 512 -cdrom $^
 	#$(GDB) --command=gdb.txt vertex-build/boot/vertex.bin
 
 clean:

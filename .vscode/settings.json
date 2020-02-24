@@ -9,6 +9,13 @@
         "xstring": "c",
         "xiosbase": "c",
         "processor.h": "c",
-        "paging.h": "c"
+        "paging.h": "c",
+        "serial.h": "c",
+        "display.h": "c",
+        "timer.h": "c",
+        "thread.h": "c",
+        "chelpers.h": "c",
+        "isr.h": "c",
+        "descriptors.h": "c"
     }
 }
